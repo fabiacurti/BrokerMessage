@@ -59,7 +59,7 @@ public class RabbitMqEventPublisher : IEventPublisher, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Erro ao inicializar exchange: {ex.Message}");
+            Console.WriteLine($"Erro ao inicializar exchange: {ex.Message}");
             throw;
         }
     }
@@ -96,7 +96,7 @@ public class RabbitMqEventPublisher : IEventPublisher, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Erro ao publicar evento: {ex.Message}");
+            Console.WriteLine($"Erro ao publicar evento: {ex.Message}");
             throw;
         }
     }
@@ -200,11 +200,11 @@ public class RabbitMqEventConsumer : IEventConsumer, IDisposable
                 consumer: _consumer
             );
 
-            Console.WriteLine($"🔄 Começando a consumir de {queueName} com routing key {_routingKey}");
+            Console.WriteLine($"Começando a consumir de {queueName} com routing key {_routingKey}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Erro ao configurar consumer: {ex.Message}");
+            Console.WriteLine($"Erro ao configurar consumer: {ex.Message}");
             throw;
         }
     }
