@@ -1,0 +1,31 @@
+name: Build and Test .NET Solution
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore OrderProcessingSystem.sln
+
+      - name: Build solution
+        run: dotnet build OrderProcessingSystem.sln --configuration Release --no-restore
+
+      - name: Run tests (if exists)
+        run: dotnet test OrderProcessingSystem.sln --configuration Release --no-build
