@@ -10,6 +10,10 @@ jobs:
   build-test-docker:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: OrderProcessingSystem
+
     steps:
       # 1. Checkout
       - name: Checkout repository
@@ -29,7 +33,7 @@ jobs:
       - name: Build
         run: dotnet build OrderProcessingSystem.sln --configuration Release --no-restore
 
-      # 5. Test (se existir)
+      # 5. Test
       - name: Test
         run: dotnet test OrderProcessingSystem.sln --configuration Release --no-build
         continue-on-error: true
@@ -46,7 +50,7 @@ jobs:
       - name: Validate docker-compose
         run: docker compose config
 
-      # 8. Subir stack (teste de integração básico)
+      # 8. Subir stack (smoke test)
       - name: Start containers (smoke test)
         run: |
           docker compose up -d
