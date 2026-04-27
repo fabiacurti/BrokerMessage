@@ -7,57 +7,90 @@ on:
     branches: ["**"]
 
 jobs:
-  build-test-docker:
-    runs-on: ubuntu-latest
 
+  # ─── JOB 1: BUILD & TEST .NET ──────────────────────────────────────────────
+  build-and-test:
+    name: 🔨 Build & Test (.NET)
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: OrderProcessingSystem
 
     steps:
-      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-      # 2. Setup .NET
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4   # v4 já suporta Node 24
         with:
           dotnet-version: "8.0.x"
 
-      # 3. Restore dependencies
-      - name: Restore
+      - name: Restore dependencies
         run: dotnet restore OrderProcessingSystem.sln
 
-      # 4. Build solution
-      - name: Build
+      - name: Build solution
         run: dotnet build OrderProcessingSystem.sln --configuration Release --no-restore
 
-      # 5. Test
-      - name: Test
-        run: dotnet test OrderProcessingSystem.sln --configuration Release --no-build
+      - name: Run tests
+        run: dotnet test OrderProcessingSystem.sln --configuration Release --no-build --verbosity normal
         continue-on-error: true
 
-      # 6. Docker build (API + Services)
-      - name: Build Docker images
-        run: |
-          docker build -t orderapi ./src/OrderApi
-          docker build -t paymentservice ./src/PaymentService
-          docker build -t inventoryservice ./src/InventoryService
-          docker build -t notificationservice ./src/NotificationService
+  # ─── JOB 2: DOCKER BUILD ───────────────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker Build (imagens)
+    runs-on: ubuntu-latest
+    needs: build-and-test   # só roda se o build passar
 
-      # 7. Validar docker-compose
-      - name: Validate docker-compose
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Build OrderApi
+        run: docker build -t orderapi ./OrderProcessingSystem/src/OrderApi
+
+      - name: Build PaymentService
+        run: docker build -t paymentservice ./OrderProcessingSystem/src/PaymentService
+
+      - name: Build InventoryService
+        run: docker build -t inventoryservice ./OrderProcessingSystem/src/InventoryService
+
+      - name: Build NotificationService
+        run: docker build -t notificationservice ./OrderProcessingSystem/src/NotificationService
+
+  # ─── JOB 3: DOCKER COMPOSE (smoke test) ────────────────────────────────────
+  docker-compose-test:
+    name: 🚀 Docker Compose (smoke test)
+    runs-on: ubuntu-latest
+    needs: docker-build   # só roda se as imagens buildarem
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Validate docker-compose config
+        working-directory: OrderProcessingSystem
         run: docker compose config
 
-      # 8. Subir stack (smoke test)
-      - name: Start containers (smoke test)
+      - name: Start containers
+        working-directory: OrderProcessingSystem
         run: |
           docker compose up -d
-          sleep 10
+          sleep 15
           docker ps
 
-      # 9. Cleanup
+      - name: Check containers health
+        working-directory: OrderProcessingSystem
+        run: |
+          docker compose ps
+          docker compose logs --tail=50
+
       - name: Stop containers
         if: always()
-        run: docker compose down
+        working-directory: OrderProcessingSystem
+        run: docker compose down --volumes
