@@ -49,13 +49,16 @@ public class RabbitMqEventPublisher : IEventPublisher, IDisposable
     {
         try
         {
-            _channel = _connection.CreateChannelAsync().Result;
-            _channel.ExchangeDeclareAsync(
-                exchange: _exchangeName,
-                type: ExchangeType.Topic,
-                durable: true,
-                autoDelete: false
-            ).Wait();
+            _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
+            if (_channel != null)
+            {
+                _channel.ExchangeDeclareAsync(
+                    exchange: _exchangeName,
+                    type: ExchangeType.Topic,
+                    durable: true,
+                    autoDelete: false
+                ).GetAwaiter().GetResult();
+            }
         }
         catch (Exception ex)
         {
@@ -137,7 +140,7 @@ public class RabbitMqEventConsumer : IEventConsumer, IDisposable
     {
         try
         {
-            _channel = _connection.CreateChannelAsync().Result;
+            _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
 
             // Configurar exchange
             await _channel.ExchangeDeclareAsync(
@@ -168,7 +171,7 @@ public class RabbitMqEventConsumer : IEventConsumer, IDisposable
             // Criar consumer
             _consumer = new AsyncEventingBasicConsumer(_channel);
 
-            _consumer.Received += async (model, ea) =>
+            _consumer.ReceivedAsync += async (model, ea) =>
             {
                 try
                 {
@@ -189,7 +192,11 @@ public class RabbitMqEventConsumer : IEventConsumer, IDisposable
                     // Rejeitar e retornar para fila (retry)
                     if (_channel != null)
                     {
-                        await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                        try
+                        {
+                            await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                        }
+                        catch { }
                     }
                 }
             };
