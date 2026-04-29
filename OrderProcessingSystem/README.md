@@ -1,5 +1,4 @@
 # 🎯 Order Processing System - RabbitMQ com .NET
-
 Um sistema completo e profissional de processamento de pedidos baseado em eventos, utilizando .NET 8.0 e RabbitMQ com padrão de arquitetura desacoplada.
 
 ## 📋 Visão Geral

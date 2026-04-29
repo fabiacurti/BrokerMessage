@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -20,6 +18,69 @@ services:
       retries: 5
     networks:
       - order-network
+
+  order-api:
+    build:
+      context: .
+      dockerfile: src/OrderApi/Dockerfile
+    container_name: order-api
+    ports:
+      - "5000:5000"
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+      RabbitMQ:Host: rabbitmq
+      RabbitMQ:Port: "5672"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - order-network
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: src/PaymentService/Dockerfile
+    container_name: payment-service
+    environment:
+      RabbitMQ:Host: rabbitmq
+      RabbitMQ:Port: "5672"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - order-network
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: src/InventoryService/Dockerfile
+    container_name: inventory-service
+    environment:
+      RabbitMQ:Host: rabbitmq
+      RabbitMQ:Port: "5672"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - order-network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: src/NotificationService/Dockerfile
+    container_name: notification-service
+    environment:
+      RabbitMQ:Host: rabbitmq
+      RabbitMQ:Port: "5672"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - order-network
+    restart: unless-stopped
 
 volumes:
   rabbitmq_data:

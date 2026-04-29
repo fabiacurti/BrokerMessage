@@ -15,7 +15,6 @@ jobs:
     defaults:
       run:
         working-directory: OrderProcessingSystem
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +22,7 @@ jobs:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4   # v4 já suporta Node 24
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
@@ -41,8 +40,10 @@ jobs:
   docker-build:
     name: 🐳 Docker Build (imagens)
     runs-on: ubuntu-latest
-    needs: build-and-test   # só roda se o build passar
-
+    needs: build-and-test
+    defaults:          # ← AQUI estava o bug: working-directory precisa estar dentro de defaults.run
+      run:
+        working-directory: OrderProcessingSystem
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,23 +51,25 @@ jobs:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Build OrderApi
-        run: docker build -t orderapi ./OrderProcessingSystem/src/OrderApi
+        run: docker build -t orderapi -f src/OrderApi/Dockerfile .
 
       - name: Build PaymentService
-        run: docker build -t paymentservice ./OrderProcessingSystem/src/PaymentService
+        run: docker build -t paymentservice -f src/PaymentService/Dockerfile .
 
       - name: Build InventoryService
-        run: docker build -t inventoryservice ./OrderProcessingSystem/src/InventoryService
+        run: docker build -t inventoryservice -f src/InventoryService/Dockerfile .
 
       - name: Build NotificationService
-        run: docker build -t notificationservice ./OrderProcessingSystem/src/NotificationService
+        run: docker build -t notificationservice -f src/NotificationService/Dockerfile .
 
   # ─── JOB 3: DOCKER COMPOSE (smoke test) ────────────────────────────────────
   docker-compose-test:
     name: 🚀 Docker Compose (smoke test)
     runs-on: ubuntu-latest
-    needs: docker-build   # só roda se as imagens buildarem
-
+    needs: docker-build
+    defaults:
+      run:
+        working-directory: OrderProcessingSystem
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -74,23 +77,19 @@ jobs:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Validate docker-compose config
-        working-directory: OrderProcessingSystem
         run: docker compose config
 
       - name: Start containers
-        working-directory: OrderProcessingSystem
         run: |
           docker compose up -d
           sleep 15
           docker ps
 
       - name: Check containers health
-        working-directory: OrderProcessingSystem
         run: |
           docker compose ps
           docker compose logs --tail=50
 
       - name: Stop containers
         if: always()
-        working-directory: OrderProcessingSystem
         run: docker compose down --volumes

@@ -1,3 +1,7 @@
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NotificationService;
 using OrderProcessingSystem.Shared;
 using RabbitMQ.Client;
@@ -21,7 +25,6 @@ var host = Host.CreateDefaultBuilder(args)
         {
             HostName = rabbitMqHost,
             Port = rabbitMqPort,
-            DispatchConsumersAsync = true,
             AutomaticRecoveryEnabled = true,
             NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
             RequestedHeartbeat = TimeSpan.FromSeconds(30)

@@ -1,3 +1,8 @@
+using System;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using OrderApi;
 using OrderApi.Controllers;
 using OrderProcessingSystem.Shared;
@@ -23,8 +28,6 @@ var connectionFactory = new ConnectionFactory
 {
     HostName = rabbitMqHost,
     Port = rabbitMqPort,
-    DispatchConsumersAsync = true,
-    // Configurações adicionais para confiabilidade
     AutomaticRecoveryEnabled = true,
     NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
     RequestedHeartbeat = TimeSpan.FromSeconds(30)
