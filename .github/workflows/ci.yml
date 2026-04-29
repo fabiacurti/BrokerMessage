@@ -42,6 +42,7 @@ jobs:
     name: 🐳 Docker Build (imagens)
     runs-on: ubuntu-latest
     needs: build-and-test   # só roda se o build passar
+    working-directory: OrderProcessingSystem
 
     steps:
       - name: Checkout repository
@@ -50,16 +51,20 @@ jobs:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Build OrderApi
-        run: docker build -t orderapi ./OrderProcessingSystem/src/OrderApi
+        working-directory: OrderProcessingSystem
+        run: docker build -t orderapi -f src/OrderApi/Dockerfile .
 
       - name: Build PaymentService
-        run: docker build -t paymentservice ./OrderProcessingSystem/src/PaymentService
+        working-directory: OrderProcessingSystem
+        run: docker build -t paymentservice -f src/PaymentService/Dockerfile .
 
       - name: Build InventoryService
-        run: docker build -t inventoryservice ./OrderProcessingSystem/src/InventoryService
+        working-directory: OrderProcessingSystem
+        run: docker build -t inventoryservice -f src/InventoryService/Dockerfile .
 
       - name: Build NotificationService
-        run: docker build -t notificationservice ./OrderProcessingSystem/src/NotificationService
+        working-directory: OrderProcessingSystem
+        run: docker build -t notificationservice -f src/NotificationService/Dockerfile .
 
   # ─── JOB 3: DOCKER COMPOSE (smoke test) ────────────────────────────────────
   docker-compose-test:
